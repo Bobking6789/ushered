@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ushered — Family Health Advocacy</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+  :root {
+    --bg:#f8f6f2;--surface:#fff;--border:#e8e4dd;--text:#1a1a2e;--muted:#8a8a9a;
+    --accent:#c84b31;--accent2:#e8895a;--green:#2d7a4f;--yellow:#e8a020;--blue:#2a5f8f;--red:#c84b31;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+
+  /* ── SCREENS ── */
+  .screen{display:none;min-height:100vh;}
+  .screen.active{display:block;}
+  .screen:not(.active){display:none !important;}
+
+  /* ── SETUP SCREEN ── */
+  .setup-screen{background:linear-gradient(135deg,#1a1a2e 0%,#2d1b4e 60%,#c84b31 100%);min-height:100vh;width:100%;padding:48px 32px 60px;}
+  .setup-step,.progress-dots,.setup-logo,.setup-tagline,#ourStorySection{max-width:640px;margin-left:auto;margin-right:auto;}
+  .setup-logo{font-family:'DM Serif Display',serif;font-size:56px;color:white;text-align:center;margin-bottom:6px;}
+  .setup-tagline{color:rgba(255,255,255,0.5);font-size:16px;text-align:center;margin-bottom:28px;}
+  .our-story-box{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);border-radius:14px;padding:14px 16px;margin-top:20px;margin-bottom:20px;}
+  .our-story-label{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:6px;}
+  .our-story-text{font-size:12px;color:rgba(255,255,255,0.7);line-height:1.65;}
+  .fade-story{opacity:0;transform:translateY(40px);transition:opacity 1s ease,transform 1s ease;}
+  .fade-story.visible{opacity:1;transform:translateY(0);}
+  .setup-step{display:none;} .setup-step.active{display:block;}
+  .step-label{font-size:13px;letter-spacing:2px;color:rgba(255,255,255,0.4);margin-bottom:8px;text-transform:uppercase;}
+  .step-title{font-family:'DM Serif Display',serif;font-size:36px;color:white;margin-bottom:6px;line-height:1.2;}
+  .step-sub{font-size:15px;color:rgba(255,255,255,0.5);margin-bottom:24px;line-height:1.5;}
+  .setup-input{width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;font-family:'DM Sans',sans-serif;font-size:20px;padding:18px 20px;border-radius:14px;outline:none;margin-bottom:16px;}
+  .setup-input::placeholder{color:rgba(255,255,255,0.35);}
+  .setup-input:focus{border-color:rgba(255,255,255,0.5);}
+  .role-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+  .role-card{background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.15);border-radius:20px;padding:32px 16px;text-align:center;cursor:pointer;transition:all 0.2s;}
+  .role-card:hover{background:rgba(255,255,255,0.13);border-color:rgba(255,255,255,0.35);}
+  .role-card.selected{background:rgba(255,255,255,0.2);border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,0.25);}
+  .role-card-icon{font-size:52px;margin-bottom:12px;}
+  .role-card-title{color:white;font-size:18px;font-weight:600;margin-bottom:6px;}
+  .role-card-hindi{color:rgba(255,255,255,0.5);font-size:15px;}
+  .setup-btn{width:100%;padding:20px;background:white;color:#1a1a2e;border:none;border-radius:14px;font-size:19px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;margin-bottom:12px;}
+  .setup-btn:hover{background:rgba(255,255,255,0.9);}
+  .setup-btn-secondary{width:100%;padding:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);border-radius:14px;font-size:16px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .progress-dots{display:flex;gap:10px;justify-content:center;margin-bottom:28px;}
+  .dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all 0.3s;}
+  .dot.active{background:white;width:30px;border-radius:5px;}
+
+  /* Med add row */
+  .med-add-row{display:flex;gap:8px;margin-bottom:12px;}
+  .med-add-input{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;font-family:'DM Sans',sans-serif;font-size:14px;padding:12px 14px;border-radius:10px;outline:none;}
+  .med-add-input::placeholder{color:rgba(255,255,255,0.35);}
+  .med-add-btn{padding:12px 16px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:white;border-radius:10px;font-size:18px;cursor:pointer;}
+  .med-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;padding:8px 12px;border-radius:20px;font-size:13px;margin:4px;}
+  .med-tag-del{cursor:pointer;opacity:0.6;font-size:16px;line-height:1;}
+  .med-tag-del:hover{opacity:1;}
+
+  /* ── HOME / MODE SELECTOR ── */
+  .mode-selector{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;background:linear-gradient(135deg,#1a1a2e 0%,#2d1b4e 50%,#c84b31 100%);}
+  .app-logo{font-family:'DM Serif Display',serif;font-size:52px;color:white;margin-bottom:8px;letter-spacing:-1px;}
+  .app-tagline{color:rgba(255,255,255,0.6);font-size:15px;margin-bottom:40px;text-align:center;font-weight:300;}
+  .welcome-name{font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:24px;text-align:center;}
+  .mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:500px;width:100%;margin-bottom:20px;}
+  .mode-card{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:28px 16px;text-align:center;cursor:pointer;transition:all 0.3s;backdrop-filter:blur(10px);}
+  .mode-card:hover{background:rgba(255,255,255,0.2);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.3);}
+  .mode-icon{font-size:44px;margin-bottom:10px;}
+  .mode-title{color:white;font-size:16px;font-weight:600;margin-bottom:4px;}
+  .mode-title-hindi{color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:6px;}
+  .mode-desc{color:rgba(255,255,255,0.4);font-size:11px;line-height:1.4;}
+  .home-btns{display:flex;gap:10px;margin-top:8px;}
+  .home-btn-sm{flex:1;padding:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:20px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:center;}
+
+  /* ── ELDER APP ── */
+  .elder-app{background:#fef9f4;}
+  .elder-header{background:linear-gradient(135deg,var(--accent),var(--accent2));padding:32px 24px 24px;color:white;}
+  .elder-greeting{font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:2px;}
+  .elder-greeting-hindi{font-size:18px;opacity:0.8;margin-bottom:4px;}
+  .elder-date{font-size:12px;opacity:0.6;}
+  .elder-body{padding:20px 20px 80px;}
+  .big-btn{width:100%;padding:18px;border-radius:14px;border:none;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:12px;transition:all 0.2s;display:flex;align-items:center;gap:12px;text-align:left;}
+  .big-btn:active{transform:scale(0.98);}
+  .btn-icon{font-size:28px;flex-shrink:0;}
+  .btn-text{flex:1;}
+  .btn-hindi{font-size:12px;opacity:0.65;font-weight:400;display:block;margin-top:2px;}
+  .btn-checkin{background:#fff3eb;color:#c84b31;border:2px solid #f0c8b0;}
+  .btn-medicine{background:#ebf5eb;color:#2d7a4f;border:2px solid #b0d4b0;}
+  .btn-pain{background:#fff0f0;color:#c84b31;border:2px solid #f0b0b0;}
+  .btn-emergency{background:#c84b31;color:white;}
+  .checkin-panel{background:white;border-radius:16px;padding:24px;margin-bottom:12px;box-shadow:0 2px 16px rgba(0,0,0,0.06);display:none;}
+  .checkin-panel.open{display:block;}
+  .panel-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:2px;}
+  .panel-title-hindi{font-size:14px;color:var(--muted);margin-bottom:16px;}
+  .feeling-scale{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0 20px;}
+  .feeling-btn{padding:12px 4px;border-radius:10px;border:2px solid var(--border);background:var(--bg);cursor:pointer;text-align:center;transition:all 0.2s;font-size:24px;display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .feeling-btn span{font-size:9px;color:var(--muted);font-family:'DM Sans',sans-serif;}
+  .feeling-btn.selected{border-color:var(--accent);background:#fff3eb;}
+  .medicine-list{display:flex;flex-direction:column;gap:10px;margin:12px 0;}
+  .medicine-item{display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg);border-radius:10px;border:2px solid var(--border);cursor:pointer;transition:all 0.2s;font-size:15px;}
+  .medicine-item.checked{background:#ebf5eb;border-color:#b0d4b0;}
+  .medicine-check{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:white;}
+  .medicine-item.checked .medicine-check{background:var(--green);border-color:var(--green);color:white;}
+  .pain-scale{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0;}
+  .pain-btn{padding:12px 4px;border-radius:10px;border:2px solid var(--border);background:var(--bg);cursor:pointer;text-align:center;font-size:18px;font-weight:700;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .pain-btn span{font-size:9px;color:var(--muted);font-weight:400;}
+  .pain-btn.p1.selected{background:#e8f5e9;border-color:#4caf50;color:#2d7a4f;}
+  .pain-btn.p2.selected{background:#fff8e1;border-color:#ffc107;color:#e65100;}
+  .pain-btn.p3.selected{background:#fff3e0;border-color:#ff9800;color:#e65100;}
+  .pain-btn.p4.selected{background:#fce4ec;border-color:#f44336;color:#c62828;}
+  .pain-btn.p5.selected{background:#ffebee;border-color:#b71c1c;color:#b71c1c;}
+  .pain-location{width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:15px;font-family:'DM Sans',sans-serif;background:var(--bg);margin:10px 0;outline:none;}
+  .elder-submit{width:100%;padding:16px;background:var(--accent);color:white;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:8px;transition:all 0.2s;}
+  .elder-submit:hover{background:#a83a24;}
+  .emergency-modal{position:fixed;inset:0;background:rgba(200,75,49,0.97);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:1000;padding:40px 24px;text-align:center;}
+  .emergency-modal.open{display:flex;}
+  .emergency-icon{font-size:72px;margin-bottom:20px;animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+  .emergency-title{font-family:'DM Serif Display',serif;font-size:32px;color:white;margin-bottom:6px;}
+  .emergency-hindi{font-size:22px;color:rgba(255,255,255,0.8);margin-bottom:20px;}
+  .emergency-call{font-size:48px;font-weight:700;color:white;margin-bottom:8px;}
+  .emergency-close{margin-top:28px;padding:12px 28px;background:rgba(255,255,255,0.2);border:2px solid white;color:white;border-radius:10px;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+  /* ── FAMILY APP ── */
+  .family-app{background:var(--bg);}
+  .family-header{background:linear-gradient(135deg,#1a1a2e,#2a5f8f);padding:32px 24px 24px;color:white;}
+  .family-title{font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:2px;}
+  .family-sub{font-size:12px;opacity:0.5;margin-bottom:16px;}
+  .alert-banner{background:#fff3eb;border:1px solid #f0c8b0;border-radius:10px;padding:12px 14px;margin:12px 20px;display:flex;gap:10px;align-items:flex-start;}
+  .alert-banner.red{background:#ffebee;border-color:#f0b0b0;}
+  .alert-banner.green{background:#ebf5eb;border-color:#b0d4b0;}
+  .alert-icon{font-size:20px;flex-shrink:0;}
+  .alert-title{font-size:12px;font-weight:600;margin-bottom:2px;}
+  .alert-desc{font-size:11px;color:var(--muted);line-height:1.4;}
+  .family-body{padding:8px 20px 100px;}
+  .elder-card{background:white;border-radius:14px;padding:18px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05);border:1px solid var(--border);}
+  .elder-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .elder-name{font-family:'DM Serif Display',serif;font-size:18px;}
+  .elder-status{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:600;letter-spacing:0.5px;}
+  .status-good{background:#ebf5eb;color:var(--green);}
+  .status-warning{background:#fff3eb;color:#c84b31;}
+  .status-missing{background:#f5f5f5;color:var(--muted);}
+  .metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+  .metric-box{background:var(--bg);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border);}
+  .metric-box-icon{font-size:18px;margin-bottom:3px;}
+  .metric-box-val{font-size:16px;font-weight:700;}
+  .metric-box-label{font-size:9px;color:var(--muted);margin-top:2px;}
+  .timeline{display:flex;flex-direction:column;gap:6px;}
+  .timeline-item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);}
+  .timeline-item:last-child{border-bottom:none;}
+  .timeline-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+  .dot-green{background:var(--green);} .dot-yellow{background:var(--yellow);} .dot-red{background:var(--red);} .dot-gray{background:var(--muted);}
+  .timeline-title{font-size:12px;font-weight:500;margin-bottom:1px;}
+  .timeline-time{font-size:10px;color:var(--muted);}
+  .ai-card{background:linear-gradient(135deg,#1a1a2e,#2d1b4e);border-radius:14px;padding:18px;margin-bottom:12px;color:white;}
+  .ai-card-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .ai-card-dot{width:7px;height:7px;border-radius:50%;background:#a78bfa;animation:pulse2 2s infinite;}
+  @keyframes pulse2{0%,100%{opacity:1}50%{opacity:0.4}}
+  .ai-card-label{font-size:10px;letter-spacing:2px;color:#a78bfa;font-weight:600;}
+  .ai-card-text{font-size:13px;line-height:1.7;color:rgba(255,255,255,0.8);}
+  .ai-analyze-btn{width:100%;padding:12px;background:rgba(167,139,250,0.2);border:1px solid rgba(167,139,250,0.3);border-radius:10px;color:#a78bfa;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:10px;}
+  .action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+  .action-btn{padding:10px;border-radius:8px;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+  .btn-call{background:#ebf5eb;color:var(--green);border:1px solid #b0d4b0;}
+  .btn-remind{background:#fff3eb;color:var(--accent);border:1px solid #f0c8b0;}
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--border);display:flex;padding:8px 0 20px;}
+  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px;cursor:pointer;border:none;background:transparent;font-family:'DM Sans',sans-serif;color:var(--muted);font-size:10px;transition:all 0.2s;}
+  .nav-item.active{color:var(--accent);}
+  .nav-icon{font-size:20px;}
+  .back-btn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:white;padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:14px;display:inline-flex;align-items:center;gap:5px;}
+
+  /* ── SETTINGS SCREEN ── */
+  .settings-screen{background:var(--bg);min-height:100vh;padding-bottom:80px;}
+  .settings-header{background:linear-gradient(135deg,#1a1a2e,#2d1b4e);padding:32px 24px 24px;color:white;}
+  .settings-body{padding:20px;}
+  .settings-card{background:white;border-radius:14px;padding:20px;margin-bottom:14px;border:1px solid var(--border);}
+  .settings-title{font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:4px;}
+  .settings-sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+  .settings-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;margin-top:14px;}
+  .settings-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;background:var(--bg);outline:none;margin-bottom:4px;}
+  .settings-input:focus{border-color:var(--accent);}
+  .settings-save{padding:10px 20px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:12px;}
+  .med-settings-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+  .med-settings-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);}
+  .med-settings-name{flex:1;font-size:13px;}
+  .med-settings-time{font-size:11px;color:var(--muted);}
+  .med-settings-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 4px;}
+  .med-settings-del:hover{color:var(--red);}
+  .add-med-row{display:flex;gap:8px;margin-top:4px;}
+  .add-med-input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg);outline:none;}
+  .add-med-input:focus{border-color:var(--green);}
+  .add-med-btn{padding:10px 14px;background:var(--green);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+  /* ── ABOUT SCREEN ── */
+  .about-screen{background:linear-gradient(135deg,#1a1a2e 0%,#2d1b4e 60%,#c84b31 100%);min-height:100vh;padding:40px 24px 60px;}
+
+  /* ── TOAST ── */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a2e;color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:all 0.3s;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .dot-flash{animation:dotflash 1.4s infinite both;display:inline-block;}
+  .dot-flash:nth-child(2){animation-delay:0.2s;} .dot-flash:nth-child(3){animation-delay:0.4s;}
+  @keyframes dotflash{0%,80%,100%{opacity:0}40%{opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     SETUP SCREEN
+══════════════════════════════════════════════════════ -->
+<div id="setupScreen" class="screen active setup-screen">
+  <div class="setup-logo">Ushered</div>
+  <div class="setup-tagline">Family health advocacy — because someone has to care</div>
+
+  <div class="progress-dots" id="progressDots">
+    <div class="dot active" id="d1"></div>
+    <div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div>
+  </div>
+
+  <!-- STEP 1: Names -->
+  <div class="setup-step active" id="step1">
+    <div class="step-label">Step 1 of 3</div>
+    <div class="step-title">What are your names?</div>
+    <div class="step-sub">So the app feels personal — like it was made for your family</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase">Elder's name</div>
+    <input class="setup-input" id="setupElderName" placeholder="e.g. Dadaji, Grandpa, Nana...">
+    <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase">Your name (family member)</div>
+    <input class="setup-input" id="setupFamilyName" placeholder="e.g. Arjun, Priya...">
+    <button class="setup-btn" onclick="nextStep(2)" style="margin-top:8px">Continue →</button>
+  </div>
+
+  <!-- STEP 2: Medications -->
+  <div class="setup-step" id="step2">
+    <div class="step-label">Step 2 of 3</div>
+    <div class="step-title">Add medications</div>
+    <div class="step-sub">What medications does your elder take? We'll remind them daily. You can always add more later.</div>
+    <div class="med-add-row">
+      <input class="med-add-input" id="setupMedName" placeholder="Medication name...">
+      <input class="med-add-input" id="setupMedTime" placeholder="Time (e.g. 8am)" style="max-width:110px">
+      <button class="med-add-btn" onclick="addSetupMed()">+</button>
+    </div>
+    <div id="setupMedList" style="display:flex;flex-wrap:wrap;margin:10px 0 20px;min-height:40px"></div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:20px">💡 Common ones: Blood Pressure, Aspirin, Metformin, Vitamin D, Statins</div>
+    <button class="setup-btn" onclick="nextStep(3)">Continue →</button>
+    <button class="setup-btn-secondary" onclick="nextStep(1)" style="margin-top:8px">← Back</button>
+  </div>
+
+  <!-- STEP 3: Condition / Notes -->
+  <div class="setup-step" id="step3">
+    <div class="step-label">Step 3 of 3</div>
+    <div class="step-title">Health conditions</div>
+    <div class="step-sub">What health conditions should we watch for? This helps the AI give better insights.</div>
+    <input class="setup-input" id="setupConditions" placeholder="e.g. High blood pressure, Diabetes, Heart disease...">
+    <div style="font-size:12px;color:rgba(255,255,255,0.35);margin:8px 0 24px">The more specific, the better the AI can help your family</div>
+    <button class="setup-btn" onclick="finishSetup()">🙏 Start Ushered</button>
+    <button class="setup-btn-secondary" onclick="nextStep(2)" style="margin-top:8px">← Back</button>
+  </div>
+
+  <div id="ourStorySection" class="fade-story" style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:60px 8px;">
+    <div style="font-family:'DM Serif Display',serif;font-size:54px;line-height:1.1;color:white;font-weight:700;margin-bottom:24px;">Our Story</div>
+    <div style="font-size:18px;color:rgba(255,255,255,0.85);line-height:1.8;">My grandfather passed away from high blood pressure, which he refused to treat because he thought he was fine. My grandmother had a similar denial, but my family got her treatment. Ushered was built so that every grandparent can have someone looking out for them before a silent condition becomes a life-changing emergency.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     HOME / MODE SELECTOR
+══════════════════════════════════════════════════════ -->
+<div id="modeSelector" class="screen mode-selector">
+  <div class="app-logo">Ushered</div>
+  <div class="app-tagline">Family health advocacy — because someone has to care</div>
+  <div class="welcome-name" id="welcomeName"></div>
+
+  <div class="mode-cards">
+    <div class="mode-card" onclick="enterMode('elder')">
+      <div class="mode-icon">👴</div>
+      <div class="mode-title" id="homeElderLabel">Elder</div>
+      <div class="mode-title-hindi">मैं बुजुर्ग हूँ</div>
+      <div class="mode-desc">Daily check-ins, medications, pain reports</div>
+    </div>
+    <div class="mode-card" onclick="enterMode('family')">
+      <div class="mode-icon">👨‍👩‍👧</div>
+      <div class="mode-title" id="homeFamilyLabel">Family</div>
+      <div class="mode-title-hindi">मैं परिवार हूँ</div>
+      <div class="mode-desc">Monitor health and get alerts</div>
+    </div>
+  </div>
+
+  <div class="home-btns">
+    <div class="home-btn-sm" onclick="enterMode('about')">📖 Our Story</div>
+    <div class="home-btn-sm" onclick="enterMode('settings')">⚙️ Settings</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     ELDER SCREEN
+══════════════════════════════════════════════════════ -->
+<div id="elderScreen" class="screen elder-app">
+  <div class="elder-header">
+    <button class="back-btn" onclick="goHome()">← Home</button>
+    <div class="elder-greeting" id="elderGreeting">Good morning 🙏</div>
+    <div class="elder-greeting-hindi" id="elderGreetingHindi">नमस्ते</div>
+    <div class="elder-date" id="elderDate"></div>
+  </div>
+  <div class="elder-body">
+
+    <button class="big-btn btn-checkin" onclick="togglePanel('checkinPanel')">
+      <span class="btn-icon">😊</span>
+      <div class="btn-text">How are you feeling?<span class="btn-hindi">आप कैसा महसूस कर रहे हैं?</span></div>
+    </button>
+    <div class="checkin-panel" id="checkinPanel">
+      <div class="panel-title">How are you feeling today?</div>
+      <div class="panel-title-hindi">आज आप कैसा महसूस कर रहे हैं?</div>
+      <div class="feeling-scale">
+        <button class="feeling-btn" onclick="selectFeeling(1,this)">😭<span>Very Bad</span><span>बहुत बुरा</span></button>
+        <button class="feeling-btn" onclick="selectFeeling(2,this)">😔<span>Bad</span><span>बुरा</span></button>
+        <button class="feeling-btn" onclick="selectFeeling(3,this)">😐<span>Okay</span><span>ठीक</span></button>
+        <button class="feeling-btn" onclick="selectFeeling(4,this)">😊<span>Good</span><span>अच्छा</span></button>
+        <button class="feeling-btn" onclick="selectFeeling(5,this)">🤩<span>Great!</span><span>बहुत अच्छा</span></button>
+      </div>
+      <button class="elder-submit" onclick="submitCheckin()">Submit / जमा करें ✓</button>
+    </div>
+
+    <button class="big-btn btn-medicine" onclick="togglePanel('medicinePanel')">
+      <span class="btn-icon">💊</span>
+      <div class="btn-text">Did you take your medicine?<span class="btn-hindi">क्या आपने दवाई ली?</span></div>
+    </button>
+    <div class="checkin-panel" id="medicinePanel">
+      <div class="panel-title">Today's Medicines</div>
+      <div class="panel-title-hindi">आज की दवाइयाँ</div>
+      <div class="medicine-list" id="elderMedList"></div>
+      <button class="elder-submit" style="background:var(--green)" onclick="submitMedicine()">Save / सहेजें ✓</button>
+    </div>
+
+    <button class="big-btn btn-pain" onclick="togglePanel('painPanel')">
+      <span class="btn-icon">🤕</span>
+      <div class="btn-text">Report pain or discomfort<span class="btn-hindi">दर्द या तकलीफ बताएं</span></div>
+    </button>
+    <div class="checkin-panel" id="painPanel">
+      <div class="panel-title">Where does it hurt?</div>
+      <div class="panel-title-hindi">कहाँ दर्द है?</div>
+      <input class="pain-location" id="painLocation" placeholder="e.g. chest, head, arm... / जैसे सिर, सीना...">
+      <div style="font-size:13px;font-weight:500;margin:10px 0 6px">Pain level / दर्द कितना है?</div>
+      <div class="pain-scale">
+        <button class="pain-btn p1" onclick="selectPain(1,this)">1<span>Mild</span></button>
+        <button class="pain-btn p2" onclick="selectPain(2,this)">2<span>Low</span></button>
+        <button class="pain-btn p3" onclick="selectPain(3,this)">3<span>Medium</span></button>
+        <button class="pain-btn p4" onclick="selectPain(4,this)">4<span>High</span></button>
+        <button class="pain-btn p5" onclick="selectPain(5,this)">5<span>Severe</span></button>
+      </div>
+      <div id="painWarning" style="display:none;background:#ffebee;border:1px solid #f44336;border-radius:8px;padding:10px;margin:10px 0;font-size:12px;color:#c62828">
+        ⚠️ Severe pain — call your family or press Emergency!<br><strong>बहुत तेज़ दर्द — तुरंत परिवार को बताएं!</strong>
+      </div>
+      <button class="elder-submit" onclick="submitPain()">Report Pain / दर्द बताएं</button>
+    </div>
+
+    <button class="big-btn btn-emergency" onclick="showEmergency()">
+      <span class="btn-icon">🚨</span>
+      <div class="btn-text">EMERGENCY<span class="btn-hindi" style="color:rgba(255,255,255,0.75)">आपातकाल</span></div>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     EMERGENCY MODAL
+══════════════════════════════════════════════════════ -->
+<div class="emergency-modal" id="emergencyModal">
+  <div class="emergency-icon">🚨</div>
+  <div class="emergency-title">Emergency!</div>
+  <div class="emergency-hindi">आपातकाल!</div>
+  <div style="color:rgba(255,255,255,0.8);font-size:14px;margin-bottom:20px">Your family has been notified.<br>परिवार को सूचित किया गया है।</div>
+  <div class="emergency-call">911</div>
+  <div style="color:rgba(255,255,255,0.6);font-size:13px">Call 911 if life-threatening</div>
+  <button class="emergency-close" onclick="closeEmergency()">I'm okay / मैं ठीक हूँ</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     FAMILY SCREEN
+══════════════════════════════════════════════════════ -->
+<div id="familyScreen" class="screen family-app">
+  <div class="family-header">
+    <button class="back-btn" onclick="goHome()">← Home</button>
+    <div class="family-title" id="familyDashTitle">Family Dashboard</div>
+    <div class="family-sub">Monitoring your loved ones 🙏</div>
+  </div>
+  <div id="alertsArea"></div>
+  <div class="family-body">
+
+    <div class="elder-card">
+      <div class="elder-card-header">
+        <div>
+          <div class="elder-name" id="familyElderName">👴 Elder</div>
+          <div style="font-size:11px;color:var(--muted)" id="lastCheckinTime">Last check-in: —</div>
+        </div>
+        <div class="elder-status" id="elderStatusBadge">—</div>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric-box"><div class="metric-box-icon">😊</div><div class="metric-box-val" id="metricFeeling">—</div><div class="metric-box-label">Feeling</div></div>
+        <div class="metric-box"><div class="metric-box-icon">💊</div><div class="metric-box-val" id="metricMeds">—</div><div class="metric-box-label">Meds</div></div>
+        <div class="metric-box"><div class="metric-box-icon">🤕</div><div class="metric-box-val" id="metricPain">—</div><div class="metric-box-label">Pain</div></div>
+      </div>
+      <div class="action-row">
+        <button class="action-btn btn-call" onclick="showToast('📞 Calling...')">📞 Call</button>
+        <button class="action-btn btn-remind" onclick="showToast('💊 Reminder sent!')">💊 Remind</button>
+      </div>
+    </div>
+
+    <div class="ai-card">
+      <div class="ai-card-header"><div class="ai-card-dot"></div><div class="ai-card-label">AI HEALTH ADVOCATE</div></div>
+      <div class="ai-card-text" id="familyAiText">Log check-ins to unlock AI insights about your loved one's health patterns.</div>
+      <button class="ai-analyze-btn" onclick="getFamilyInsights()">🧠 Analyze Health Patterns</button>
+    </div>
+
+    <div class="elder-card">
+      <div style="font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:3px">📋 Recent Activity</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Last 7 days</div>
+      <div class="timeline" id="familyTimeline">
+        <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">No activity yet. Ask your elder to complete a check-in!</div>
+      </div>
+    </div>
+
+    <!-- CUSTOM WATCH FOR -->
+    <div class="elder-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px">⚠️ Watch For</div>
+        <button onclick="toggleAddSign()" style="background:var(--accent);color:white;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Add</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Signs needing immediate attention</div>
+
+      <div id="addSignForm" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:10px">Add Warning Sign</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <button class="severity-btn" data-sev="red" onclick="selectSeverity('red',this)" style="flex:1;padding:7px;border-radius:7px;border:2px solid #ffcdd2;background:#ffebee;color:#c84b31;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔴 Critical</button>
+          <button class="severity-btn" data-sev="yellow" onclick="selectSeverity('yellow',this)" style="flex:1;padding:7px;border-radius:7px;border:2px solid var(--border);background:var(--bg);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🟡 Warning</button>
+          <button class="severity-btn" data-sev="green" onclick="selectSeverity('green',this)" style="flex:1;padding:7px;border-radius:7px;border:2px solid var(--border);background:var(--bg);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🟢 Positive</button>
+        </div>
+        <input id="signText" placeholder="Sign / symptom..." style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:white;outline:none;margin-bottom:8px">
+        <input id="signAction" placeholder="What to do..." style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:white;outline:none;margin-bottom:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button onclick="toggleAddSign()" style="padding:8px;border-radius:7px;border:1px solid var(--border);background:white;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--muted)">Cancel</button>
+          <button onclick="saveCustomSign()" style="padding:8px;border-radius:7px;border:none;background:var(--accent);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Save</button>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px" id="defaultSigns">
+        <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><span>🔴</span><span><strong>Chest pain or tightness</strong> — call 911 immediately</span></div>
+        <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><span>🔴</span><span><strong>Missed medications 2+ days</strong> — especially BP meds</span></div>
+        <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><span>🟡</span><span><strong>Consistent low mood</strong> (3+ days)</span></div>
+        <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><span>🟡</span><span><strong>No check-in for 24 hours</strong> — call to check in</span></div>
+        <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><span>🟢</span><span><strong>Daily check-ins + meds taken</strong> — all good!</span></div>
+      </div>
+      <div id="customSignsList" style="margin-top:8px;display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active"><span class="nav-icon">🏠</span>Home</button>
+    <button class="nav-item" onclick="enterMode('settings')"><span class="nav-icon">⚙️</span>Settings</button>
+    <button class="nav-item" onclick="enterMode('about')"><span class="nav-icon">📖</span>Story</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SETTINGS SCREEN
+══════════════════════════════════════════════════════ -->
+<div id="settingsScreen" class="screen settings-screen">
+  <div class="settings-header">
+    <button class="back-btn" onclick="goHome()">← Home</button>
+    <div class="family-title">Settings ⚙️</div>
+    <div class="family-sub">Customize Ushered for your family</div>
+  </div>
+  <div class="settings-body">
+
+    <!-- Names -->
+    <div class="settings-card">
+      <div class="settings-title">Names</div>
+      <div class="settings-sub">Personalize how the app addresses your family</div>
+      <div class="settings-label">Elder's name</div>
+      <input class="settings-input" id="settingsElderName" placeholder="e.g. Dadaji, Grandpa...">
+      <div class="settings-label">Family member's name</div>
+      <input class="settings-input" id="settingsFamilyName" placeholder="e.g. Arjun, Priya...">
+      <button class="settings-save" onclick="saveNames()">Save Names</button>
+    </div>
+
+    <!-- Medications -->
+    <div class="settings-card">
+      <div class="settings-title">Medications 💊</div>
+      <div class="settings-sub">Add or remove medications the elder takes daily</div>
+      <div class="med-settings-list" id="medSettingsList"></div>
+      <div class="add-med-row">
+        <input class="add-med-input" id="newMedName" placeholder="Medication name...">
+        <input class="add-med-input" id="newMedTime" placeholder="Time" style="max-width:90px">
+        <button class="add-med-btn" onclick="addMedication()">Add</button>
+      </div>
+    </div>
+
+    <!-- Conditions -->
+    <div class="settings-card">
+      <div class="settings-title">Health Conditions</div>
+      <div class="settings-sub">Helps the AI give better insights</div>
+      <div class="settings-label">Known conditions</div>
+      <input class="settings-input" id="settingsConditions" placeholder="e.g. High blood pressure, Diabetes...">
+      <button class="settings-save" onclick="saveConditions()">Save</button>
+    </div>
+
+    <!-- Reset -->
+    <div class="settings-card">
+      <div class="settings-title">Reset Setup</div>
+      <div class="settings-sub">Go through the setup process again</div>
+      <button onclick="resetApp()" style="padding:10px 20px;background:#ffebee;color:var(--red);border:1px solid #ffcdd2;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Reset App</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     ABOUT SCREEN
+══════════════════════════════════════════════════════ -->
+<div id="aboutScreen" class="screen about-screen">
+  <button onclick="goHome()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:8px 16px;border-radius:20px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:28px;display:inline-flex;align-items:center;gap:5px">← Back</button>
+  <div style="text-align:center;margin-bottom:36px">
+    <div style="font-size:52px;margin-bottom:14px">🙏</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:32px;color:white;margin-bottom:6px">Our Story</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.4)">Why Ushered exists</div>
+  </div>
+  <div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:24px;margin-bottom:16px">
+    <div style="font-size:18px;margin-bottom:10px">👴 Dadaji</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin-bottom:14px;line-height:1.3">"He always said he was fine."</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.8">My grandfather lived with high blood pressure for over 10 years. He knew about it. His doctors told him. His family told him. But he always believed he was okay — that he didn't need the medications, didn't need the checkups, didn't need to worry.<br><br>That denial cost him his life.<br><br>One year later, my grandmother started showing the same signs. But this time, our family stepped in. We advocated for her. She is alive today because someone refused to let her say she was fine when she wasn't.</div>
+  </div>
+  <div style="background:rgba(200,75,49,0.15);border:1px solid rgba(200,75,49,0.3);border-radius:18px;padding:24px;margin-bottom:16px">
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;color:white;margin-bottom:10px">The difference between them?</div>
+    <div style="font-size:14px;color:rgba(255,255,255,0.8);font-style:italic;margin-bottom:10px">Someone advocated for her.</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7">That one difference — between loss and survival — is why I built Ushered.</div>
+  </div>
+  <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:24px;margin-bottom:24px;text-align:center">
+    <div style="font-size:32px;margin-bottom:10px">👦</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;color:white;margin-bottom:6px">Built by a 13-year-old</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.7">From San Jose, CA. Taught myself to code this summer. Built this for my grandfather, my grandmother, and every family that deserves a second chance.</div>
+    <div style="margin-top:12px;font-size:11px;color:rgba(255,255,255,0.3)">Ushered v1.0 — Summer 2025</div>
+  </div>
+  <button onclick="goHome()" style="width:100%;padding:14px;background:white;color:#1a1a2e;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Start Using Ushered →</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let cfg = JSON.parse(localStorage.getItem('ushered_config') || JSON.stringify({
+  setupDone: false,
+  role: '',
+  elderName: 'Dadaji',
+  familyName: '',
+  medications: [
+    {name:'Blood Pressure (Amlodipine)', time:'8:00 AM'},
+    {name:'Aspirin', time:'After meals'},
+    {name:'Vitamin D', time:'Bedtime'}
+  ],
+  conditions: 'High blood pressure',
+  customSigns: []
+}));
+
+let data = JSON.parse(localStorage.getItem('ushered_data') || JSON.stringify({
+  checkins:[],medicines:[],painReports:[],
+  lastCheckin:null,currentFeeling:null,medsToday:[],currentPain:null
+}));
+
+let selectedFeeling=null, selectedPain=null, selectedSeverity='red';
+let setupMeds=[];
+const feelingEmoji={1:'😭',2:'😔',3:'😐',4:'😊',5:'🤩'};
+const feelingText={1:'Very Bad',2:'Bad',3:'Okay',4:'Good',5:'Great!'};
+
+function saveConfig(){localStorage.setItem('ushered_config',JSON.stringify(cfg));}
+function saveData(){localStorage.setItem('ushered_data',JSON.stringify(data));}
+
+// ══════════════════════════════════════════════════════
+// SETUP
+// ══════════════════════════════════════════════════════
+function init(){
+  cfg.setupDone = false;
+  saveConfig();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('setupScreen').classList.add('active');
+  nextStep(1);
+  const story=document.getElementById('ourStorySection');
+  function checkStory(){
+    if(!story)return;
+    const top=story.getBoundingClientRect().top;
+    if(top < window.innerHeight*0.8) story.classList.add('visible');
+  }
+  window.addEventListener('scroll',checkStory,{passive:true});
+  checkStory();
+}
+
+function updateDots(step){
+  for(let i=1;i<=3;i++) document.getElementById('d'+i).classList.toggle('active',i<=step);
+}
+
+function nextStep(step){
+  document.querySelectorAll('.setup-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('step'+step).classList.add('active');
+  updateDots(step);
+}
+
+function selectRole(role,el){
+  cfg.role=role;
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function addSetupMed(){
+  const name=document.getElementById('setupMedName').value.trim();
+  const time=document.getElementById('setupMedTime').value.trim()||'Daily';
+  if(!name) return;
+  setupMeds.push({name,time});
+  renderSetupMeds();
+  document.getElementById('setupMedName').value='';
+  document.getElementById('setupMedTime').value='';
+}
+
+function renderSetupMeds(){
+  const list=document.getElementById('setupMedList');
+  list.innerHTML=setupMeds.map((m,i)=>`
+    <span class="med-tag">💊 ${m.name} · ${m.time}
+      <span class="med-tag-del" onclick="removeSetupMed(${i})">×</span>
+    </span>`).join('');
+}
+
+function removeSetupMed(i){
+  setupMeds.splice(i,1);
+  renderSetupMeds();
+}
+
+function finishSetup(){
+  cfg.elderName=document.getElementById('setupElderName').value.trim()||'Dadaji';
+  cfg.familyName=document.getElementById('setupFamilyName').value.trim()||'Family';
+  cfg.conditions=document.getElementById('setupConditions').value.trim()||'High blood pressure';
+  if(setupMeds.length>0) cfg.medications=setupMeds;
+  cfg.setupDone=true;
+  saveConfig();
+  document.getElementById('setupScreen').classList.remove('active');
+  document.getElementById('modeSelector').classList.add('active');
+  updateHomeLabels();
+  showToast('🙏 Welcome to Ushered!');
+}
+
+function updateHomeLabels(){
+  document.getElementById('welcomeName').textContent=`Welcome, ${cfg.familyName||'Family'} 🙏`;
+  document.getElementById('homeElderLabel').textContent=cfg.elderName||'Elder';
+  document.getElementById('homeFamilyLabel').textContent='Family';
+}
+
+function resetApp(){
+  if(!confirm('Reset all settings? Your health data will be kept.')) return;
+  cfg.setupDone=false;
+  saveConfig();
+  setupMeds=[];
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('setupScreen').classList.add('active');
+  nextStep(1);
+}
+
+// ══════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════
+function enterMode(mode){
+  if(!cfg.setupDone){showToast('Please complete setup first!');return;}
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  if(mode==='elder'){
+    document.getElementById('elderScreen').classList.add('active');
+    initElder();
+  } else if(mode==='family'){
+    document.getElementById('familyScreen').classList.add('active');
+    initFamily();
+  } else if(mode==='settings'){
+    document.getElementById('settingsScreen').classList.add('active');
+    initSettings();
+  } else if(mode==='about'){
+    document.getElementById('aboutScreen').classList.add('active');
+  }
+}
+
+function goHome(){
+  if(!cfg.setupDone){return;}
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('modeSelector').classList.add('active');
+  updateHomeLabels();
+}
+
+// ══════════════════════════════════════════════════════
+// ELDER
+// ══════════════════════════════════════════════════════
+function initElder(){
+  const now=new Date();
+  const hr=now.getHours();
+  const greeting=hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
+  document.getElementById('elderGreeting').textContent=`${greeting}, ${cfg.elderName} 🙏`;
+  document.getElementById('elderGreetingHindi').textContent=`नमस्ते, ${cfg.elderName}`;
+  document.getElementById('elderDate').textContent=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  renderElderMeds();
+}
+
+function renderElderMeds(){
+  const list=document.getElementById('elderMedList');
+  list.innerHTML=cfg.medications.map((m,i)=>`
+    <div class="medicine-item" onclick="toggleMedicine(this)" data-med="${m.name}">
+      <div class="medicine-check">✓</div>
+      <div>
+        <div style="font-weight:600;font-size:14px">${m.name}</div>
+        <div style="font-size:12px;color:var(--muted)">${m.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+function togglePanel(id){
+  const panel=document.getElementById(id);
+  const isOpen=panel.classList.contains('open');
+  document.querySelectorAll('.checkin-panel').forEach(p=>p.classList.remove('open'));
+  if(!isOpen) panel.classList.add('open');
+}
+
+function selectFeeling(val,btn){
+  selectedFeeling=val;
+  document.querySelectorAll('.feeling-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function submitCheckin(){
+  if(!selectedFeeling){showToast('Please select how you feel!');return;}
+  data.currentFeeling=selectedFeeling;
+  data.lastCheckin=new Date().toISOString();
+  data.checkins.unshift({date:new Date().toISOString(),feeling:selectedFeeling});
+  saveData();
+  document.getElementById('checkinPanel').classList.remove('open');
+  selectedFeeling=null;
+  document.querySelectorAll('.feeling-btn').forEach(b=>b.classList.remove('selected'));
+  showToast('✓ Check-in saved! परिवार को सूचित किया गया');
+  if(data.currentFeeling<=2) setTimeout(()=>showToast('⚠️ Family has been alerted'),2000);
+}
+
+function toggleMedicine(item){item.classList.toggle('checked');}
+
+function submitMedicine(){
+  const checked=[];
+  document.querySelectorAll('.medicine-item.checked').forEach(item=>checked.push(item.dataset.med));
+  data.medsToday=checked;
+  data.medicines.unshift({date:new Date().toISOString(),taken:checked});
+  saveData();
+  document.getElementById('medicinePanel').classList.remove('open');
+  showToast(`✓ ${checked.length} medicine(s) logged!`);
+}
+
+function selectPain(val,btn){
+  selectedPain=val;
+  document.querySelectorAll('.pain-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('painWarning').style.display=val>=4?'block':'none';
+}
+
+function submitPain(){
+  if(!selectedPain){showToast('Please select pain level!');return;}
+  const location=document.getElementById('painLocation').value||'Not specified';
+  data.currentPain=selectedPain;
+  data.painReports.unshift({date:new Date().toISOString(),level:selectedPain,location});
+  saveData();
+  document.getElementById('painPanel').classList.remove('open');
+  selectedPain=null;
+  document.querySelectorAll('.pain-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('painLocation').value='';
+  document.getElementById('painWarning').style.display='none';
+  showToast(data.currentPain>=4?'🚨 Family alerted about severe pain!':'✓ Pain report saved');
+}
+
+function showEmergency(){document.getElementById('emergencyModal').classList.add('open');}
+function closeEmergency(){document.getElementById('emergencyModal').classList.remove('open');}
+
+// ══════════════════════════════════════════════════════
+// FAMILY
+// ══════════════════════════════════════════════════════
+function initFamily(){
+  document.getElementById('familyElderName').textContent='👴 '+cfg.elderName;
+  document.getElementById('familyDashTitle').textContent=cfg.familyName+"'s Dashboard";
+  updateFamilyDashboard();
+  renderTimeline();
+  renderAlerts();
+  renderCustomSigns();
+}
+
+function updateFamilyDashboard(){
+  const el=document.getElementById('lastCheckinTime');
+  const badge=document.getElementById('elderStatusBadge');
+  if(data.lastCheckin){
+    const diff=(new Date()-new Date(data.lastCheckin))/(1000*60*60);
+    el.textContent=`Last check-in: ${diff<1?'Just now':Math.round(diff)+'h ago'}`;
+    badge.textContent=diff<24?'✓ Checked In':'⚠ No Check-in';
+    badge.className='elder-status '+(diff<24?'status-good':'status-warning');
+  } else {
+    el.textContent='No check-ins yet';
+    badge.textContent='? Unknown';
+    badge.className='elder-status status-missing';
+  }
+  document.getElementById('metricFeeling').textContent=data.currentFeeling?feelingEmoji[data.currentFeeling]:'—';
+  document.getElementById('metricMeds').textContent=data.medsToday.length>0?`${data.medsToday.length}/${cfg.medications.length}`:'—';
+  const painEl=document.getElementById('metricPain');
+  painEl.textContent=data.currentPain?`${data.currentPain}/5`:'None';
+  if(data.currentPain>=4) painEl.style.color='#c84b31';
+}
+
+function renderAlerts(){
+  const area=document.getElementById('alertsArea');
+  const alerts=[];
+  if(!data.lastCheckin){
+    alerts.push({type:'warning',icon:'⚠️',title:'No check-ins yet',desc:`Ask ${cfg.elderName} to complete their first daily check-in`});
+  } else {
+    const diff=(new Date()-new Date(data.lastCheckin))/(1000*60*60);
+    if(diff>24) alerts.push({type:'red',icon:'🔴',title:'Missed check-in!',desc:`${cfg.elderName} has not checked in for over 24 hours. Consider calling.`});
+    else alerts.push({type:'green',icon:'✅',title:'Checked in today',desc:`${cfg.elderName} completed their daily check-in`});
+  }
+  if(data.currentPain>=4) alerts.push({type:'red',icon:'🚨',title:'Severe pain reported!',desc:`Pain level ${data.currentPain}/5 — consider calling immediately`});
+  if(data.currentFeeling<=2&&data.currentFeeling) alerts.push({type:'warning',icon:'💛',title:'Low mood reported',desc:`${cfg.elderName} is not feeling well today. A call might help.`});
+  area.innerHTML=alerts.map(a=>`<div class="alert-banner ${a.type}"><div class="alert-icon">${a.icon}</div><div class="alert-text"><div class="alert-title">${a.title}</div><div class="alert-desc">${a.desc}</div></div></div>`).join('');
+}
+
+function renderTimeline(){
+  const timeline=document.getElementById('familyTimeline');
+  const events=[];
+  data.checkins.slice(0,5).forEach(c=>{
+    const color=c.feeling>=4?'green':c.feeling>=3?'yellow':'red';
+    events.push({color,title:`Felt ${feelingText[c.feeling]} ${feelingEmoji[c.feeling]}`,date:c.date});
+  });
+  data.medicines.slice(0,3).forEach(m=>events.push({color:'green',title:`Took ${m.taken.length} medicine(s)`,date:m.date}));
+  data.painReports.slice(0,3).forEach(p=>{
+    const color=p.level>=4?'red':p.level>=3?'yellow':'green';
+    events.push({color,title:`Pain level ${p.level}/5 — ${p.location}`,date:p.date});
+  });
+  events.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(!events.length){timeline.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">No activity yet.</div>';return;}
+  timeline.innerHTML=events.slice(0,8).map(e=>`<div class="timeline-item"><div class="timeline-dot dot-${e.color}"></div><div><div class="timeline-title">${e.title}</div><div class="timeline-time">${getTimeAgo(new Date(e.date))}</div></div></div>`).join('');
+}
+
+function getTimeAgo(date){
+  const diff=(new Date()-date)/1000;
+  if(diff<60) return 'Just now';
+  if(diff<3600) return Math.round(diff/60)+'m ago';
+  if(diff<86400) return Math.round(diff/3600)+'h ago';
+  return Math.round(diff/86400)+'d ago';
+}
+
+// Custom warning signs
+function toggleAddSign(){
+  const f=document.getElementById('addSignForm');
+  f.style.display=f.style.display==='none'?'block':'none';
+}
+
+function selectSeverity(sev,btn){
+  selectedSeverity=sev;
+  document.querySelectorAll('.severity-btn').forEach(b=>{
+    b.style.background='var(--bg)';b.style.borderColor='var(--border)';b.style.color='var(--muted)';
+  });
+  const colors={red:['#ffebee','#ffcdd2','#c84b31'],yellow:['#fff8e1','#ffe082','#e8a020'],green:['#ebf5eb','#b0d4b0','#2d7a4f']};
+  const c=colors[sev];
+  btn.style.background=c[0];btn.style.borderColor=c[1];btn.style.color=c[2];
+}
+
+function saveCustomSign(){
+  const text=document.getElementById('signText').value.trim();
+  const action=document.getElementById('signAction').value.trim();
+  if(!text){showToast('Please enter a warning sign!');return;}
+  const icons={red:'🔴',yellow:'🟡',green:'🟢'};
+  cfg.customSigns.push({icon:icons[selectedSeverity]||'🟡',text,action});
+  saveConfig();
+  renderCustomSigns();
+  document.getElementById('signText').value='';
+  document.getElementById('signAction').value='';
+  toggleAddSign();
+  showToast('✓ Warning sign added!');
+}
+
+function renderCustomSigns(){
+  const list=document.getElementById('customSignsList');
+  if(!list) return;
+  list.innerHTML=cfg.customSigns.map((s,i)=>`
+    <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;padding:8px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
+      <span>${s.icon}</span>
+      <div style="flex:1"><strong>${s.text}</strong>${s.action?` — ${s.action}`:''}
+      </div>
+      <button onclick="removeCustomSign(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0;line-height:1">×</button>
+    </div>`).join('');
+}
+
+function removeCustomSign(i){
+  cfg.customSigns.splice(i,1);
+  saveConfig();
+  renderCustomSigns();
+  showToast('Sign removed');
+}
+
+// ══════════════════════════════════════════════════════
+// AI INSIGHTS
+// ══════════════════════════════════════════════════════
+async function getFamilyInsights(){
+  const total=data.checkins.length+data.medicines.length+data.painReports.length;
+  if(total<3){showToast('Need more check-ins for AI insights!');return;}
+  const aiText=document.getElementById('familyAiText');
+  aiText.innerHTML='Analyzing <span class="dot-flash">●</span><span class="dot-flash">●</span><span class="dot-flash">●</span>';
+  const summary=`Elder: ${cfg.elderName}, Conditions: ${cfg.conditions}
+Check-ins: ${data.checkins.slice(0,7).map(c=>`${new Date(c.date).toLocaleDateString()}: feeling ${c.feeling}/5`).join(', ')}
+Meds taken: ${data.medicines.slice(0,5).map(m=>`${new Date(m.date).toLocaleDateString()}: ${m.taken.join(', ')}`).join(' | ')}
+Pain: ${data.painReports.slice(0,5).map(p=>`${new Date(p.date).toLocaleDateString()}: level ${p.level}/5 at ${p.location}`).join(' | ')}`;
+  try{
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:`You are a compassionate family health advocate for Ushered app. The family is monitoring ${cfg.elderName} who has ${cfg.conditions}. Analyze this data and give specific, warm, actionable guidance in 2-3 short paragraphs. Focus on patterns, what's going well, and what needs attention. Never replace professional advice.\n\n${summary}`}]})
+    });
+    const result=await response.json();
+    aiText.innerHTML=(result.content?.[0]?.text||'Unable to generate insights.').replace(/\n\n/g,'</p><p style="margin-top:8px">');
+  }catch(e){aiText.innerHTML='Could not connect to AI. Please try again.';}
+}
+
+// ══════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════
+function initSettings(){
+  document.getElementById('settingsElderName').value=cfg.elderName||'';
+  document.getElementById('settingsFamilyName').value=cfg.familyName||'';
+  document.getElementById('settingsConditions').value=cfg.conditions||'';
+  renderMedSettings();
+}
+
+function saveNames(){
+  const en=document.getElementById('settingsElderName').value.trim();
+  const fn=document.getElementById('settingsFamilyName').value.trim();
+  if(en) cfg.elderName=en;
+  if(fn) cfg.familyName=fn;
+  saveConfig();
+  showToast('✓ Names saved!');
+}
+
+function saveConditions(){
+  cfg.conditions=document.getElementById('settingsConditions').value.trim();
+  saveConfig();
+  showToast('✓ Conditions saved!');
+}
+
+function renderMedSettings(){
+  const list=document.getElementById('medSettingsList');
+  list.innerHTML=cfg.medications.map((m,i)=>`
+    <div class="med-settings-item">
+      <span style="font-size:16px">💊</span>
+      <div class="med-settings-name">${m.name}</div>
+      <div class="med-settings-time">${m.time}</div>
+      <button class="med-settings-del" onclick="removeMedication(${i})">×</button>
+    </div>`).join('');
+}
+
+function addMedication(){
+  const name=document.getElementById('newMedName').value.trim();
+  const time=document.getElementById('newMedTime').value.trim()||'Daily';
+  if(!name){showToast('Enter a medication name!');return;}
+  cfg.medications.push({name,time});
+  saveConfig();
+  renderMedSettings();
+  renderElderMeds();
+  document.getElementById('newMedName').value='';
+  document.getElementById('newMedTime').value='';
+  showToast('✓ Medication added!');
+}
+
+function removeMedication(i){
+  cfg.medications.splice(i,1);
+  saveConfig();
+  renderMedSettings();
+  renderElderMeds();
+  showToast('Medication removed');
+}
+
+// ══════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+init();
+
+</script>
+</body>
+</html>
