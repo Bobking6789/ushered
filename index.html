@@ -19,7 +19,8 @@
   .screen:not(.active){display:none !important;}
 
   /* ── SETUP SCREEN ── */
-  .setup-screen{background:linear-gradient(135deg,#1a1a2e 0%,#2d1b4e 60%,#c84b31 100%);min-height:100vh;padding:48px 32px 60px;max-width:640px;margin:0 auto;}
+  .setup-screen{background:linear-gradient(135deg,#1a1a2e 0%,#2d1b4e 60%,#c84b31 100%);min-height:100vh;width:100%;padding:48px 32px 60px;}
+  .setup-step,.progress-dots,.setup-logo,.setup-tagline,#ourStorySection{max-width:640px;margin-left:auto;margin-right:auto;}
   .setup-logo{font-family:'DM Serif Display',serif;font-size:56px;color:white;text-align:center;margin-bottom:6px;}
   .setup-tagline{color:rgba(255,255,255,0.5);font-size:16px;text-align:center;margin-bottom:28px;}
   .our-story-box{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);border-radius:14px;padding:14px 16px;margin-top:20px;margin-bottom:20px;}
@@ -898,23 +899,47 @@ function removeCustomSign(i){
 // ══════════════════════════════════════════════════════
 // AI INSIGHTS
 // ══════════════════════════════════════════════════════
-async function getFamilyInsights(){
+function getFamilyInsights(){
   const total=data.checkins.length+data.medicines.length+data.painReports.length;
   if(total<3){showToast('Need more check-ins for AI insights!');return;}
   const aiText=document.getElementById('familyAiText');
   aiText.innerHTML='Analyzing <span class="dot-flash">●</span><span class="dot-flash">●</span><span class="dot-flash">●</span>';
-  const summary=`Elder: ${cfg.elderName}, Conditions: ${cfg.conditions}
-Check-ins: ${data.checkins.slice(0,7).map(c=>`${new Date(c.date).toLocaleDateString()}: feeling ${c.feeling}/5`).join(', ')}
-Meds taken: ${data.medicines.slice(0,5).map(m=>`${new Date(m.date).toLocaleDateString()}: ${m.taken.join(', ')}`).join(' | ')}
-Pain: ${data.painReports.slice(0,5).map(p=>`${new Date(p.date).toLocaleDateString()}: level ${p.level}/5 at ${p.location}`).join(' | ')}`;
-  try{
-    const response=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:`You are a compassionate family health advocate for Ushered app. The family is monitoring ${cfg.elderName} who has ${cfg.conditions}. Analyze this data and give specific, warm, actionable guidance in 2-3 short paragraphs. Focus on patterns, what's going well, and what needs attention. Never replace professional advice.\n\n${summary}`}]})
-    });
-    const result=await response.json();
-    aiText.innerHTML=(result.content?.[0]?.text||'Unable to generate insights.').replace(/\n\n/g,'</p><p style="margin-top:8px">');
-  }catch(e){aiText.innerHTML='Could not connect to AI. Please try again.';}
+  // Build the insight from the raw data, then show it after a short "thinking" delay.
+  setTimeout(()=>{ aiText.innerHTML=buildInsight(); },1400);
+}
+
+function buildInsight(){
+  const name=cfg.elderName;
+  const paras=[];
+
+  // 1) Mood trend — average the recent feeling scores.
+  const feelings=data.checkins.slice(0,7).map(c=>c.feeling);
+  if(feelings.length){
+    const avg=feelings.reduce((a,b)=>a+b,0)/feelings.length;
+    const lowDays=feelings.filter(f=>f<=2).length;
+    if(avg>=4) paras.push(`${name}'s mood has been positive lately, averaging ${avg.toFixed(1)} out of 5 across the last ${feelings.length} check-ins. That consistency is a genuinely good sign — keep encouraging the daily check-in habit.`);
+    else if(avg>=3) paras.push(`${name}'s mood is holding steady at around ${avg.toFixed(1)} out of 5. Nothing alarming, but a warm phone call on the lower days can make a real difference.`);
+    else paras.push(`${name}'s recent mood is low — averaging ${avg.toFixed(1)} out of 5${lowDays?`, with ${lowDays} difficult day(s)`:''}. Sustained low mood in older adults deserves attention; consider checking in directly and, if it continues, mentioning it to their doctor.`);
+  }
+
+  // 2) Medication adherence — taken vs. prescribed.
+  if(data.medicines.length){
+    const lastTaken=data.medicines[0].taken.length;
+    const prescribed=cfg.medications.length;
+    if(lastTaken>=prescribed) paras.push(`Medication adherence looks strong — all ${prescribed} prescribed medication(s) were logged most recently. For conditions like ${cfg.conditions||'theirs'}, this daily consistency is exactly what protects against silent complications.`);
+    else paras.push(`Heads up on medications: only ${lastTaken} of ${prescribed} were logged last time. Missed doses are the single biggest risk for conditions like ${cfg.conditions||'this'} — a gentle reminder today is worth it.`);
+  }
+
+  // 3) Pain — flag anything moderate or higher.
+  if(data.painReports.length){
+    const recent=data.painReports[0];
+    if(recent.level>=4) paras.push(`⚠️ A high pain level (${recent.level}/5${recent.location?` at the ${recent.location}`:''}) was reported recently. This is worth a direct call, and medical attention if it persists or worsens.`);
+    else if(recent.level>=3) paras.push(`There was a moderate pain report (${recent.level}/5${recent.location?` at the ${recent.location}`:''}). Keep an eye on whether it becomes a pattern.`);
+    else paras.push(`Pain reports have stayed low (${recent.level}/5) — reassuring, but keep logging so any change stands out early.`);
+  }
+
+  paras.push(`<em style="opacity:0.7">This is a supportive summary based on logged data — it does not replace professional medical advice.</em>`);
+  return paras.map(p=>`<p style="margin-top:8px">${p}</p>`).join('');
 }
 
 // ══════════════════════════════════════════════════════
