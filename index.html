@@ -452,7 +452,7 @@
       <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Signs needing immediate attention</div>
 
       <div id="addSignForm" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
-        <div style="font-size:12px;font-weight:600;margin-bottom:10px">Add Warning Sign</div>
+        <div id="signFormTitle" style="font-size:12px;font-weight:600;margin-bottom:10px">Add Warning Sign</div>
         <div style="display:flex;gap:6px;margin-bottom:10px">
           <button class="severity-btn" data-sev="red" onclick="selectSeverity('red',this)" style="flex:1;padding:7px;border-radius:7px;border:2px solid #ffcdd2;background:#ffebee;color:#c84b31;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔴 Critical</button>
           <button class="severity-btn" data-sev="yellow" onclick="selectSeverity('yellow',this)" style="flex:1;padding:7px;border-radius:7px;border:2px solid var(--border);background:var(--bg);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🟡 Warning</button>
@@ -461,19 +461,12 @@
         <input id="signText" placeholder="Sign / symptom..." style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:white;outline:none;margin-bottom:8px">
         <input id="signAction" placeholder="What to do..." style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:white;outline:none;margin-bottom:10px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <button onclick="toggleAddSign()" style="padding:8px;border-radius:7px;border:1px solid var(--border);background:white;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--muted)">Cancel</button>
-          <button onclick="saveCustomSign()" style="padding:8px;border-radius:7px;border:none;background:var(--accent);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Save</button>
+          <button onclick="closeSignForm()" style="padding:8px;border-radius:7px;border:1px solid var(--border);background:white;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--muted)">Cancel</button>
+          <button onclick="saveSign()" style="padding:8px;border-radius:7px;border:none;background:var(--accent);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Save</button>
         </div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:8px" id="defaultSigns">
-        <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><span>🔴</span><span><strong>Chest pain or tightness</strong> — call 911 immediately</span></div>
-        <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><span>🔴</span><span><strong>Missed medications 2+ days</strong> — especially BP meds</span></div>
-        <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><span>🟡</span><span><strong>Consistent low mood</strong> (3+ days)</span></div>
-        <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><span>🟡</span><span><strong>No check-in for 24 hours</strong> — call to check in</span></div>
-        <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px"><span>🟢</span><span><strong>Daily check-ins + meds taken</strong> — all good!</span></div>
-      </div>
-      <div id="customSignsList" style="margin-top:8px;display:flex;flex-direction:column;gap:8px"></div>
+      <div id="signsList" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
   </div>
 
@@ -583,7 +576,8 @@ let cfg = JSON.parse(localStorage.getItem('ushered_config') || JSON.stringify({
   ],
   conditions: 'High blood pressure',
   passcode: '',
-  customSigns: []
+  customSigns: [],
+  signs: null
 }));
 
 let data = JSON.parse(localStorage.getItem('ushered_data') || JSON.stringify({
@@ -599,6 +593,18 @@ let selectedFeeling=null, selectedPain=null, selectedSeverity='red';
 let setupMeds=[];
 const feelingEmoji={1:'😭',2:'😔',3:'😐',4:'😊',5:'🤩'};
 const feelingText={1:'Very Bad',2:'Bad',3:'Okay',4:'Good',5:'Great!'};
+
+// Seed the editable "Watch For" list the first time (and fold in any old custom signs).
+const DEFAULT_SIGNS=[
+  {icon:'🔴',text:'Chest pain or tightness',action:'call 911 immediately'},
+  {icon:'🔴',text:'Missed medications 2+ days',action:'especially BP meds'},
+  {icon:'🟡',text:'Consistent low mood',action:'lasting 3+ days'},
+  {icon:'🟡',text:'No check-in for 24 hours',action:'call to check in'},
+  {icon:'🟢',text:'Daily check-ins + meds taken',action:'all good!'}
+];
+if(!cfg.signs){
+  cfg.signs=DEFAULT_SIGNS.concat(cfg.customSigns||[]);
+}
 
 function saveConfig(){localStorage.setItem('ushered_config',JSON.stringify(cfg));}
 function saveData(){localStorage.setItem('ushered_data',JSON.stringify(data));}
@@ -911,7 +917,7 @@ function initFamily(){
   updateFamilyDashboard();
   renderTimeline();
   renderAlerts();
-  renderCustomSigns();
+  renderSigns();
 }
 
 function updateFamilyDashboard(){
@@ -974,52 +980,82 @@ function getTimeAgo(date){
   return Math.round(diff/86400)+'d ago';
 }
 
-// Custom warning signs
+// Warning signs ("Watch For") — all editable, including the standard ones.
+let editingSignIndex=null;   // null = adding new, otherwise the index being edited
+
 function toggleAddSign(){
   const f=document.getElementById('addSignForm');
-  f.style.display=f.style.display==='none'?'block':'none';
+  if(f.style.display==='none'||!f.style.display) openSignForm(null);
+  else closeSignForm();
 }
 
-function selectSeverity(sev,btn){
+function openSignForm(index){
+  editingSignIndex=index;
+  const form=document.getElementById('addSignForm');
+  const title=document.getElementById('signFormTitle');
+  if(index===null){
+    title.textContent='Add Warning Sign';
+    document.getElementById('signText').value='';
+    document.getElementById('signAction').value='';
+    setSeverity('red');
+  } else {
+    const s=cfg.signs[index];
+    title.textContent='Edit Warning Sign';
+    document.getElementById('signText').value=s.text;
+    document.getElementById('signAction').value=s.action||'';
+    const sevByIcon={'🔴':'red','🟡':'yellow','🟢':'green'};
+    setSeverity(sevByIcon[s.icon]||'yellow');
+  }
+  form.style.display='block';
+}
+
+function closeSignForm(){
+  document.getElementById('addSignForm').style.display='none';
+  editingSignIndex=null;
+}
+
+// Highlights the chosen severity button (used by both clicks and prefill).
+function setSeverity(sev){
   selectedSeverity=sev;
-  document.querySelectorAll('.severity-btn').forEach(b=>{
-    b.style.background='var(--bg)';b.style.borderColor='var(--border)';b.style.color='var(--muted)';
-  });
   const colors={red:['#ffebee','#ffcdd2','#c84b31'],yellow:['#fff8e1','#ffe082','#e8a020'],green:['#ebf5eb','#b0d4b0','#2d7a4f']};
-  const c=colors[sev];
-  btn.style.background=c[0];btn.style.borderColor=c[1];btn.style.color=c[2];
+  document.querySelectorAll('.severity-btn').forEach(b=>{
+    if(b.dataset.sev===sev){const c=colors[sev];b.style.background=c[0];b.style.borderColor=c[1];b.style.color=c[2];}
+    else{b.style.background='var(--bg)';b.style.borderColor='var(--border)';b.style.color='var(--muted)';}
+  });
 }
+function selectSeverity(sev,btn){setSeverity(sev);}
 
-function saveCustomSign(){
+function saveSign(){
   const text=document.getElementById('signText').value.trim();
   const action=document.getElementById('signAction').value.trim();
   if(!text){showToast('Please enter a warning sign!');return;}
   const icons={red:'🔴',yellow:'🟡',green:'🟢'};
-  cfg.customSigns.push({icon:icons[selectedSeverity]||'🟡',text,action});
+  const sign={icon:icons[selectedSeverity]||'🟡',text,action};
+  if(editingSignIndex===null) cfg.signs.push(sign);
+  else cfg.signs[editingSignIndex]=sign;
   saveConfig();
-  renderCustomSigns();
-  document.getElementById('signText').value='';
-  document.getElementById('signAction').value='';
-  toggleAddSign();
-  showToast('✓ Warning sign added!');
+  renderSigns();
+  closeSignForm();
+  showToast(editingSignIndex===null?'✓ Warning sign added!':'✓ Warning sign updated!');
 }
 
-function renderCustomSigns(){
-  const list=document.getElementById('customSignsList');
+function renderSigns(){
+  const list=document.getElementById('signsList');
   if(!list) return;
-  list.innerHTML=cfg.customSigns.map((s,i)=>`
+  list.innerHTML=cfg.signs.map((s,i)=>`
     <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;padding:8px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
       <span>${s.icon}</span>
-      <div style="flex:1"><strong>${s.text}</strong>${s.action?` — ${s.action}`:''}
-      </div>
-      <button onclick="removeCustomSign(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0;line-height:1">×</button>
+      <div style="flex:1"><strong>${s.text}</strong>${s.action?` — ${s.action}`:''}</div>
+      <button onclick="openSignForm(${i})" title="Edit" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1">✏️</button>
+      <button onclick="removeSign(${i})" title="Delete" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px;line-height:1">×</button>
     </div>`).join('');
 }
 
-function removeCustomSign(i){
-  cfg.customSigns.splice(i,1);
+function removeSign(i){
+  if(!confirm('Delete this warning sign?')) return;
+  cfg.signs.splice(i,1);
   saveConfig();
-  renderCustomSigns();
+  renderSigns();
   showToast('Sign removed');
 }
 
