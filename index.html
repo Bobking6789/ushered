@@ -301,6 +301,7 @@
     <div class="elder-greeting" id="elderGreeting">Good morning 🙏</div>
     <div class="elder-greeting-hindi" id="elderGreetingHindi">नमस्ते</div>
     <div class="elder-date" id="elderDate"></div>
+    <div id="rewardBar" style="margin-top:12px;display:inline-flex;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.25);border-radius:20px;padding:8px 16px;font-size:14px;font-weight:600;"></div>
   </div>
   <div class="elder-body">
 
@@ -563,8 +564,14 @@ let cfg = JSON.parse(localStorage.getItem('ushered_config') || JSON.stringify({
 
 let data = JSON.parse(localStorage.getItem('ushered_data') || JSON.stringify({
   checkins:[],medicines:[],painReports:[],
-  lastCheckin:null,currentFeeling:null,medsToday:[],currentPain:null
+  lastCheckin:null,currentFeeling:null,medsToday:[],currentPain:null,
+  streak:0,bestStreak:0,points:0,lastStreakDate:null
 }));
+// Backfill fields for users who set up before rewards existed.
+if(data.streak===undefined) data.streak=0;
+if(data.bestStreak===undefined) data.bestStreak=0;
+if(data.points===undefined) data.points=0;
+if(data.lastStreakDate===undefined) data.lastStreakDate=null;
 
 let selectedFeeling=null, selectedPain=null, selectedSeverity='red';
 let setupMeds=[];
@@ -699,6 +706,7 @@ function initElder(){
   document.getElementById('elderGreetingHindi').textContent=`नमस्ते, ${cfg.elderName}`;
   document.getElementById('elderDate').textContent=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   renderElderMeds();
+  renderRewards();
 }
 
 function renderElderMeds(){
@@ -731,11 +739,18 @@ function submitCheckin(){
   data.currentFeeling=selectedFeeling;
   data.lastCheckin=new Date().toISOString();
   data.checkins.unshift({date:new Date().toISOString(),feeling:selectedFeeling});
+  const reward=awardDailyProgress();
   saveData();
   document.getElementById('checkinPanel').classList.remove('open');
   selectedFeeling=null;
   document.querySelectorAll('.feeling-btn').forEach(b=>b.classList.remove('selected'));
-  showToast('✓ Check-in saved! परिवार को सूचित किया गया');
+  renderRewards();
+  if(reward.alreadyToday){
+    showToast('✓ Check-in saved!');
+  } else {
+    showToast(`✓ +${reward.earned} points! ${reward.streak}-day streak 🔥`);
+    if(reward.milestone) setTimeout(()=>showToast(`🎉 ${reward.streak}-day milestone! Bonus points!`),1800);
+  }
   if(data.currentFeeling<=2) setTimeout(()=>showToast('⚠️ Family has been alerted'),2000);
 }
 
@@ -774,6 +789,46 @@ function submitPain(){
 
 function showEmergency(){document.getElementById('emergencyModal').classList.add('open');}
 function closeEmergency(){document.getElementById('emergencyModal').classList.remove('open');}
+
+// ══════════════════════════════════════════════════════
+// REWARDS ENGINE — streak + points
+// ══════════════════════════════════════════════════════
+// Returns a local YYYY-MM-DD key so "same day" ignores the clock time.
+function dateKey(d){
+  d=d||new Date();
+  return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+}
+
+// Called once per day when the elder completes a check-in.
+function awardDailyProgress(){
+  const today=dateKey();
+  // Already checked in today → no new points, don't break the streak.
+  if(data.lastStreakDate===today){
+    return {alreadyToday:true,streak:data.streak,points:data.points,earned:0};
+  }
+  // Was the last check-in exactly yesterday? Then the streak continues.
+  const yesterday=dateKey(new Date(Date.now()-86400000));
+  if(data.lastStreakDate===yesterday) data.streak+=1;
+  else data.streak=1;   // first ever, or a gap broke the streak
+
+  data.lastStreakDate=today;
+  if(data.streak>data.bestStreak) data.bestStreak=data.streak;
+
+  // Base points per day, plus a milestone bonus every 7 days.
+  let earned=10;
+  const milestone=(data.streak%7===0);
+  if(milestone) earned+=50;
+  data.points+=earned;
+
+  return {alreadyToday:false,streak:data.streak,points:data.points,earned,milestone};
+}
+
+// Draws the streak/points badge on the elder header.
+function renderRewards(){
+  const el=document.getElementById('rewardBar');
+  if(!el) return;
+  el.innerHTML=`<span style="margin-right:14px">🔥 ${data.streak}-day streak</span><span>⭐ ${data.points} points</span>`;
+}
 
 // ══════════════════════════════════════════════════════
 // FAMILY
