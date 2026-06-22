@@ -277,6 +277,10 @@
     <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase">Enter passcode</div>
     <input class="setup-input" id="loginPasscode" type="password" inputmode="numeric" placeholder="Your passcode" onkeydown="if(event.key==='Enter')attemptLogin()">
     <div id="loginError" style="display:none;color:#ffb4a0;font-size:13px;margin:2px 0 12px">Incorrect passcode — try again.</div>
+    <label style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.7);font-size:14px;margin:4px 0 4px;cursor:pointer">
+      <input type="checkbox" id="loginStay" checked style="width:18px;height:18px;cursor:pointer">
+      Stay logged in on this device
+    </label>
     <button class="setup-btn" onclick="attemptLogin()" style="margin-top:8px">Log in →</button>
   </div>
 </div>
@@ -605,8 +609,13 @@ function saveData(){localStorage.setItem('ushered_data',JSON.stringify(data));}
 function init(){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   if(cfg.setupDone){
-    // Already set up — show the login screen instead of redoing setup.
-    showLogin();
+    // "Stay logged in" was chosen previously → skip the login screen.
+    if(localStorage.getItem('ushered_session')==='active'){
+      document.getElementById('modeSelector').classList.add('active');
+      updateHomeLabels();
+    } else {
+      showLogin();
+    }
   } else {
     document.getElementById('setupScreen').classList.add('active');
     nextStep(1);
@@ -696,6 +705,9 @@ function showLogin(){
 function attemptLogin(){
   const entered=document.getElementById('loginPasscode').value.trim();
   if(entered===cfg.passcode){
+    // Remember the session if "Stay logged in" is checked.
+    if(document.getElementById('loginStay').checked) localStorage.setItem('ushered_session','active');
+    else localStorage.removeItem('ushered_session');
     document.getElementById('loginScreen').classList.remove('active');
     document.getElementById('modeSelector').classList.add('active');
     updateHomeLabels();
@@ -706,6 +718,7 @@ function attemptLogin(){
 }
 
 function logout(){
+  localStorage.removeItem('ushered_session');
   showLogin();
 }
 
