@@ -301,7 +301,7 @@
     <div class="elder-greeting" id="elderGreeting">Good morning 🙏</div>
     <div class="elder-greeting-hindi" id="elderGreetingHindi">नमस्ते</div>
     <div class="elder-date" id="elderDate"></div>
-    <div id="rewardBar" style="margin-top:12px;display:inline-flex;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.25);border-radius:20px;padding:8px 16px;font-size:14px;font-weight:600;"></div>
+    <div id="plantBar" style="margin-top:14px;text-align:center;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.22);border-radius:16px;padding:14px 16px;"></div>
   </div>
   <div class="elder-body">
 
@@ -565,12 +565,10 @@ let cfg = JSON.parse(localStorage.getItem('ushered_config') || JSON.stringify({
 let data = JSON.parse(localStorage.getItem('ushered_data') || JSON.stringify({
   checkins:[],medicines:[],painReports:[],
   lastCheckin:null,currentFeeling:null,medsToday:[],currentPain:null,
-  streak:0,bestStreak:0,points:0,lastStreakDate:null
+  plantStage:0,lastStreakDate:null
 }));
-// Backfill fields for users who set up before rewards existed.
-if(data.streak===undefined) data.streak=0;
-if(data.bestStreak===undefined) data.bestStreak=0;
-if(data.points===undefined) data.points=0;
+// Backfill fields for users who set up before the plant existed.
+if(data.plantStage===undefined) data.plantStage=0;
 if(data.lastStreakDate===undefined) data.lastStreakDate=null;
 
 let selectedFeeling=null, selectedPain=null, selectedSeverity='red';
@@ -706,7 +704,7 @@ function initElder(){
   document.getElementById('elderGreetingHindi').textContent=`नमस्ते, ${cfg.elderName}`;
   document.getElementById('elderDate').textContent=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   renderElderMeds();
-  renderRewards();
+  renderPlant();
 }
 
 function renderElderMeds(){
@@ -739,18 +737,13 @@ function submitCheckin(){
   data.currentFeeling=selectedFeeling;
   data.lastCheckin=new Date().toISOString();
   data.checkins.unshift({date:new Date().toISOString(),feeling:selectedFeeling});
-  const reward=awardDailyProgress();
+  const result=growPlant();
   saveData();
   document.getElementById('checkinPanel').classList.remove('open');
   selectedFeeling=null;
   document.querySelectorAll('.feeling-btn').forEach(b=>b.classList.remove('selected'));
-  renderRewards();
-  if(reward.alreadyToday){
-    showToast('✓ Check-in saved!');
-  } else {
-    showToast(`✓ +${reward.earned} points! ${reward.streak}-day streak 🔥`);
-    if(reward.milestone) setTimeout(()=>showToast(`🎉 ${reward.streak}-day milestone! Bonus points!`),1800);
-  }
+  renderPlant();
+  showToast(result.grew?'✓ Check-in saved! Your plant grew 🌿':'✓ Check-in saved!');
   if(data.currentFeeling<=2) setTimeout(()=>showToast('⚠️ Family has been alerted'),2000);
 }
 
@@ -791,7 +784,7 @@ function showEmergency(){document.getElementById('emergencyModal').classList.add
 function closeEmergency(){document.getElementById('emergencyModal').classList.remove('open');}
 
 // ══════════════════════════════════════════════════════
-// REWARDS ENGINE — streak + points
+// PLANT ENGINE — grows on check-in, wilts when days are missed
 // ══════════════════════════════════════════════════════
 // Returns a local YYYY-MM-DD key so "same day" ignores the clock time.
 function dateKey(d){
@@ -799,35 +792,40 @@ function dateKey(d){
   return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
 }
 
-// Called once per day when the elder completes a check-in.
-function awardDailyProgress(){
+// The growth stages, smallest to largest.
+const PLANT_STAGES=['🌰','🌱','🌿','☘️','🪴','🌲','🌳'];
+const PLANT_WILTED='🥀';
+
+// Is the plant currently wilting? True when the elder has missed a full day
+// (last check-in was neither today nor yesterday) after having grown something.
+function isPlantWilted(){
+  if(data.plantStage<=0||!data.lastStreakDate) return false;
   const today=dateKey();
-  // Already checked in today → no new points, don't break the streak.
-  if(data.lastStreakDate===today){
-    return {alreadyToday:true,streak:data.streak,points:data.points,earned:0};
-  }
-  // Was the last check-in exactly yesterday? Then the streak continues.
   const yesterday=dateKey(new Date(Date.now()-86400000));
-  if(data.lastStreakDate===yesterday) data.streak+=1;
-  else data.streak=1;   // first ever, or a gap broke the streak
-
-  data.lastStreakDate=today;
-  if(data.streak>data.bestStreak) data.bestStreak=data.streak;
-
-  // Base points per day, plus a milestone bonus every 7 days.
-  let earned=10;
-  const milestone=(data.streak%7===0);
-  if(milestone) earned+=50;
-  data.points+=earned;
-
-  return {alreadyToday:false,streak:data.streak,points:data.points,earned,milestone};
+  return data.lastStreakDate!==today && data.lastStreakDate!==yesterday;
 }
 
-// Draws the streak/points badge on the elder header.
-function renderRewards(){
-  const el=document.getElementById('rewardBar');
+// Called when the elder completes a check-in: the plant grows one stage.
+function growPlant(){
+  const today=dateKey();
+  if(data.lastStreakDate===today) return {grew:false};   // already grew today
+  data.plantStage=(data.plantStage||0)+1;
+  data.lastStreakDate=today;
+  return {grew:true,stage:data.plantStage};
+}
+
+// Draws the plant on the elder header.
+function renderPlant(){
+  const el=document.getElementById('plantBar');
   if(!el) return;
-  el.innerHTML=`<span style="margin-right:14px">🔥 ${data.streak}-day streak</span><span>⭐ ${data.points} points</span>`;
+  const wilted=isPlantWilted();
+  const stage=Math.min(data.plantStage||0,PLANT_STAGES.length-1);
+  const emoji=wilted?PLANT_WILTED:PLANT_STAGES[stage];
+  let caption;
+  if(wilted) caption='Your plant is wilting — check in to bring it back 💧';
+  else if(stage===0) caption='Check in to plant your seed 🌱';
+  else caption='Your plant is growing — keep checking in! 🌿';
+  el.innerHTML=`<div style="font-size:54px;line-height:1">${emoji}</div><div style="font-size:13px;opacity:0.85;margin-top:4px">${caption}</div>`;
 }
 
 // ══════════════════════════════════════════════════════
